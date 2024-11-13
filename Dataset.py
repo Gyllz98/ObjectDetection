@@ -1,10 +1,8 @@
-import json
+
 import os
-from sklearn.model_selection import train_test_split
-from torch.utils.data import Dataset, DataLoader, Subset, WeightedRandomSampler
+from torch.utils.data import Dataset
 from PIL import Image
 import torch
-from torchvision import transforms
 from tqdm import tqdm
 
 class PotholeDataset(Dataset):
