@@ -20,11 +20,12 @@ class PotholeDataset(Dataset):
         self.annotations_dir = annotations_dir
         self.split_files = split_files
         self.transform = transform
-        self.data = self._load_annotations()
+        self.data, self.labels = self._load_annotations()
 
     def _load_annotations(self):
         data = []
-        for file_name in tqdm(self.split_files):
+        labels = []
+        for file_name in tqdm(self.split_files, desc="Loading annotations"):
             img_name = file_name.replace(".xml", ".jpg")
             img_path = os.path.join(self.img_dir, img_name)
             annotation_path = os.path.join(self.annotations_dir, file_name.replace(".xml", "_labeled_proposals.txt"))
@@ -37,14 +38,16 @@ class PotholeDataset(Dataset):
                     xmin, ymin, xmax, ymax, label = line.strip().split(',')
                     bbox = [int(xmin), int(ymin), int(xmax), int(ymax)]
                     target = 1 if label == "pothole" else 0
-                    data.append((img_path, bbox, target))
-        return data
+                    data.append((img_path, bbox))
+                    labels.append(target)
+        return data, labels
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        img_path, bbox, label = self.data[idx]
+        img_path, bbox = self.data[idx]
+        label = self.labels[idx]
         img = Image.open(img_path).convert("RGB")
         
         # Crop the region of interest based on bbox
