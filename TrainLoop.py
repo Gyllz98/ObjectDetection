@@ -13,7 +13,7 @@ def train(model, optimizer, epochs, train_loader, test_loader, device):
         correct_train = 0
         total_train = 0
 
-        for batch in tqdm(train_loader):
+        for batch in tqdm(train_loader, desc="Training Progress"):
             inputs, labels =  batch[0].to(device), batch[1].to(device)
 
             # Forward pass
@@ -47,7 +47,7 @@ def train(model, optimizer, epochs, train_loader, test_loader, device):
         total_test = 0
 
         with torch.no_grad():
-            for batch in test_loader:
+            for batch in tqdm(test_loader, desc="Testing Progress"):
                 inputs, labels = batch[0].to(device), batch[1].to(device)
                 outputs = model(inputs)
                 if outputs.dim() > 1 and outputs.size(1) == 1:
