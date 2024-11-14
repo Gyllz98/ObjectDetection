@@ -40,8 +40,8 @@ if __name__ == "__main__":
     val_dataset = PotholeDataset(img_dir, annotations_dir, val_files, transform=transform)
     test_dataset = PotholeDataset(img_dir, annotations_dir, test_files, transform=transform)
 
-    # WeightedRandomSampler for training
-    labels = [label for _, label in tqdm(train_dataset,desc = "sampler for split")]
+    # # WeightedRandomSampler for training
+    # labels = [label for _, label in tqdm(train_dataset,desc = "sampler for split")]
     
     class_bgd_ratio = 1/3
     train_loader = balanced_loader(train_dataset, batch_size=16, ratio=class_bgd_ratio)  # DataLoader for training
