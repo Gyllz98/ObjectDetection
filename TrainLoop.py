@@ -1,10 +1,27 @@
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
+import wandb
 
 def train(model, optimizer, epochs, train_loader, test_loader, device):
     # Move model to the specified device
     model.to(device)
+
+    # Set up wandb for reporting
+    wandb.init(
+        project=f"trackman-project",
+        config={
+            "learning_rate": optimizer.param_groups[0]['lr'],
+            "architecture": "GT_BS",
+            "dataset": "Potholes",
+            "epochs": epochs,
+            "batch_size": train_loader.batch_size,
+            "transform": "transform",
+            "optimizer": optimizer.__class__.__name__,
+            "loss_fn": "BCE",
+            "nfft": ""
+        }
+    )
 
     for epoch in range(epochs):
         # Training phase
@@ -13,7 +30,7 @@ def train(model, optimizer, epochs, train_loader, test_loader, device):
         correct_train = 0
         total_train = 0
 
-        for batch in tqdm(train_loader, desc="Training Progress"):
+        for batch in train_loader:
             inputs, labels =  batch[0].to(device), batch[1].to(device)
 
             # Forward pass
@@ -47,7 +64,7 @@ def train(model, optimizer, epochs, train_loader, test_loader, device):
         total_test = 0
 
         with torch.no_grad():
-            for batch in tqdm(test_loader, desc="Testing Progress"):
+            for batch in test_loader:
                 inputs, labels = batch[0].to(device), batch[1].to(device)
                 outputs = model(inputs)
                 if outputs.dim() > 1 and outputs.size(1) == 1:
@@ -66,3 +83,12 @@ def train(model, optimizer, epochs, train_loader, test_loader, device):
         avg_test_loss = running_loss / len(test_loader)
         test_accuracy = 100 * correct_test / total_test
         print(f"Epoch {epoch + 1}/{epochs} | Test Loss: {avg_test_loss:.4f} | Test Accuracy: {test_accuracy:.2f}%")
+
+        # log metrics to wandb
+        wandb.log({
+            "train_loss": avg_train_loss,
+            "train_accuracy": train_accuracy,
+            "test_loss": avg_test_loss,
+            "test_accuracy": test_accuracy,
+        })
+    wandb.finish()
