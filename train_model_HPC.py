@@ -10,9 +10,9 @@ import torch
 from PotholeCNN import PotholeCNN
 from TrainLoop import train
 
-json_path = "./Potholes/splits.json"
-img_dir = './Potholes/annotated-images'
-annotations_dir = './Potholes/labeled_proposals'
+json_path = r"/zhome/33/9/203501/Projects/IDLCV/ObjectDetection/Potholes/splits.json"
+img_dir = r"/zhome/33/9/203501/Projects/IDLCV/ObjectDetection/Potholes/annotated-images"
+annotations_dir = r"/zhome/33/9/203501/Projects/IDLCV/ObjectDetection/Potholes/labeled_proposals"
 
 if __name__ == "__main__":
     # Load splits.json
@@ -36,6 +36,7 @@ if __name__ == "__main__":
 
     # Initialize datasets
     train_dataset = PotholeDataset(img_dir, annotations_dir, train_files, transform=transform)
+    print(len(train_dataset))
     val_dataset = PotholeDataset(img_dir, annotations_dir, val_files, transform=transform)
     test_dataset = PotholeDataset(img_dir, annotations_dir, test_files, transform=transform)
 
