@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 import torch
 
 # Assuming `train_dataset` is already created with all data
-def balanced_loader(dataset, batch_size=16, ratio=1/2, shuffle=True, weight_sample = False):
+def balanced_loader(dataset, batch_size=16, shuffle=True, weight_sample = True):
     # WeightedRandomSampler for training
     labels = torch.tensor(dataset.labels)
     class_counts = torch.unique(labels, return_counts=True)[1]
