@@ -61,6 +61,6 @@ def balanced_loader2(dataset, batch_size=16, target_ratio=None, shuffle=True):
         # Create DataLoader
         loader = DataLoader(dataset, batch_size=batch_size, sampler=sampler)
     else:
-        loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     
     return loader
