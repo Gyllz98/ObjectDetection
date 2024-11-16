@@ -60,7 +60,10 @@ class ResNet101Pothole(nn.Module):
         super(ResNet101Pothole, self).__init__()
         
         # Load the ResNet-101 model
-        self.resnet101 = models.resnet101(pretrained=pretrained)
+        if pretrained:
+            self.resnet101 = models.resnet101(weights=models.ResNet101_Weights.IMAGENET1K_V1)
+        else:
+            self.resnet101 = models.resnet101(weights=None)
 
         # Optionally freeze all layers in the backbone
         if freeze_backbone:

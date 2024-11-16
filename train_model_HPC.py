@@ -48,11 +48,11 @@ if __name__ == "__main__":
     # labels = [label for _, label in tqdm(train_dataset,desc = "sampler for split")]
     
     class_bgd_ratio = 1/3
-    train_loader = balanced_loader2(train_dataset, batch_size=16, target_ratio=1/3)  # DataLoader for training
-    val_loader = balanced_loader(val_dataset, batch_size=16, weight_sample=True)    # DataLoader for validation
+    train_loader = balanced_loader2(train_dataset, batch_size=16, target_ratio=class_bgd_ratio)  # DataLoader for training
+    val_loader = balanced_loader2(val_dataset, batch_size=16, target_ratio=class_bgd_ratio)    # DataLoader for validation
     test_loader = balanced_loader2(test_dataset, batch_size=16, shuffle=True)    # DataLoader for testing
     # Initialize model, optimizer, and load data
-    model = ResNet101Pothole(pretrained=True, freeze_backbone=False)  # Your model class
+    model = ResNet101Pothole(pretrained=True, freeze_backbone=True)  # Your model class
 
     optimizer = torch.optim.Adam(model.parameters(), lr = 1e-4,weight_decay = 1e-4)
 
@@ -73,9 +73,8 @@ if __name__ == "__main__":
     #     plt.savefig('output_image.png')  # Save the plot as an image
     #     print("Image saved as output_image.png")
     #     break
-
     best_model_path = r"/zhome/33/9/203501/Projects/Data/IDLCV/best_model"
 
     # Train the model
-    train(model, optimizer, scheduler, epochs=10, train_loader=train_loader, test_loader=val_loader, device=device, save_path=best_model_path)
+    train(model, optimizer, scheduler, epochs=25, train_loader=train_loader, test_loader=val_loader, device=device, save_path=best_model_path)
 
