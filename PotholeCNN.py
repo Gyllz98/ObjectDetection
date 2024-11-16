@@ -1,10 +1,18 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
+from torchvision import models
 
 class PotholeCNN(nn.Module):
     def __init__(self):
         super(PotholeCNN, self).__init__()
         
+        self.Conv1 = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1),
+            nn.BatchNorm2d(num_features=32),
+            F.relu(),
+        ) 
+
         # Define the network layers
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1)
         self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1)
@@ -47,3 +55,21 @@ class PotholeCNN(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
+class ResNet101Pothole(nn.Module):
+    def __init__(self, pretrained=True, freeze_backbone = False):
+        super(ResNet101Pothole, self).__init__()
+        
+        # Load the ResNet-101 model
+        self.resnet101 = models.resnet101(pretrained=pretrained)
+
+        # Optionally freeze all layers in the backbone
+        if freeze_backbone:
+            for param in self.resnet101.parameters():
+                param.requires_grad = False
+        
+        # Replace the fully connected layer (for ImageNet) with one for binary classification
+        num_features = self.resnet101.fc.in_features
+        self.resnet101.fc = nn.Linear(num_features, 1)  # Output 1 logit for binary classification
+
+    def forward(self, x):
+        return self.resnet101(x)  # Forward pass through the ResNet-101

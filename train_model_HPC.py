@@ -7,7 +7,7 @@ from Dataset import PotholeDataset
 from tqdm import tqdm
 from OurDataloader import balanced_loader, balanced_loader2
 import torch
-from PotholeCNN import PotholeCNN
+from PotholeCNN import PotholeCNN, ResNet101Pothole
 from TrainLoop import train
 
 json_path = r"/zhome/33/9/203501/Projects/IDLCV/ObjectDetection/Potholes/splits.json"
@@ -24,11 +24,15 @@ if __name__ == "__main__":
     test_files = splits['test']
 
     # Further split the train set into train and validation
-    # train_files, val_files = train_test_split(train_files, test_size=0.2, random_state=42)
+    train_files, val_files = train_test_split(train_files, test_size=0.2, random_state=42)
     
     transform = transforms.Compose([
-        transforms.Resize((128, 128)),
+        # transforms.Resize((128, 128)),
+        transforms.Resize(250),  # Ensure images are at least slightly larger than crop size
+        transforms.RandomResizedCrop(224, scale=(0.8, 1.0), ratio=(0.75, 1.33)), # Better size for ResNet101
+        transforms.RandomRotation(15),
         transforms.ColorJitter(brightness=0.2,contrast=0.2,saturation=0.2, hue=0.1),
+        transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -37,7 +41,7 @@ if __name__ == "__main__":
     # Initialize datasets
     train_dataset = PotholeDataset(img_dir, annotations_dir, train_files, transform=transform)
     # print(len(train_dataset))
-    # val_dataset = PotholeDataset(img_dir, annotations_dir, val_files, transform=transform)
+    val_dataset = PotholeDataset(img_dir, annotations_dir, val_files, transform=transform)
     test_dataset = PotholeDataset(img_dir, annotations_dir, test_files, transform=transform)
 
     # # WeightedRandomSampler for training
@@ -45,12 +49,14 @@ if __name__ == "__main__":
     
     class_bgd_ratio = 1/3
     train_loader = balanced_loader2(train_dataset, batch_size=16, target_ratio=1/3)  # DataLoader for training
-    # val_loader = balanced_loader(val_dataset, batch_size=16, weight_sample=True)    # DataLoader for validation
+    val_loader = balanced_loader(val_dataset, batch_size=16, weight_sample=True)    # DataLoader for validation
     test_loader = balanced_loader2(test_dataset, batch_size=16, shuffle=True)    # DataLoader for testing
     # Initialize model, optimizer, and load data
-    model = PotholeCNN()  # Your model class
+    model = ResNet101Pothole(pretrained=True, freeze_backbone=False)  # Your model class
 
-    optimizer = torch.optim.Adam(model.parameters(), lr = 1e-5,weight_decay = 1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr = 1e-4,weight_decay = 1e-4)
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=3, factor=0.1)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Assuming you have a DataLoader `dataloader`
@@ -68,8 +74,8 @@ if __name__ == "__main__":
     #     print("Image saved as output_image.png")
     #     break
 
-
+    best_model_path = r"/zhome/33/9/203501/Projects/Data/IDLCV/best_model"
 
     # Train the model
-    train(model, optimizer, epochs=10, train_loader=train_loader, test_loader=test_loader, device=device)
+    train(model, optimizer, scheduler, epochs=10, train_loader=train_loader, test_loader=val_loader, device=device, save_path=best_model_path)
 

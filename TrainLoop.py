@@ -1,15 +1,19 @@
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
+import os
 import wandb
 
-def train(model, optimizer, epochs, train_loader, test_loader, device):
+def train(model, optimizer, scheduler, epochs, train_loader, test_loader, device, save_path="model.pth"):
     # Move model to the specified device
     model.to(device)
 
+    # Create save folder
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
     # Set up wandb for reporting
     wandb.init(
-        project=f"trackman-project",
+        project="IDLCV",
         config={
             "learning_rate": optimizer.param_groups[0]['lr'],
             "architecture": "GT_BS",
@@ -23,6 +27,8 @@ def train(model, optimizer, epochs, train_loader, test_loader, device):
         }
     )
 
+    best_test_loss = float('inf')  # Track the best test loss to save the model
+
     for epoch in range(epochs):
         # Training phase
         model.train()
@@ -31,12 +37,12 @@ def train(model, optimizer, epochs, train_loader, test_loader, device):
         total_train = 0
 
         for batch in train_loader:
-            inputs, labels =  batch[0].to(device), batch[1].to(device)
+            inputs, labels = batch[0].to(device), batch[1].to(device)
 
             # Forward pass
             outputs = model(inputs)
             if outputs.dim() > 1 and outputs.size(1) == 1:
-                    outputs = outputs.squeeze(1)  # Squeeze only the channel dimension
+                outputs = outputs.squeeze(1)  # Squeeze only the channel dimension
             loss = F.binary_cross_entropy_with_logits(outputs, labels)
 
             # Backward pass and optimize
@@ -55,6 +61,7 @@ def train(model, optimizer, epochs, train_loader, test_loader, device):
         # Calculate average loss and accuracy for the epoch
         avg_train_loss = running_loss / len(train_loader)
         train_accuracy = 100 * correct_train / total_train
+
         print(f"Epoch {epoch + 1}/{epochs} | Training Loss: {avg_train_loss:.4f} | Training Accuracy: {train_accuracy:.2f}%")
 
         # Evaluation phase
@@ -84,11 +91,22 @@ def train(model, optimizer, epochs, train_loader, test_loader, device):
         test_accuracy = 100 * correct_test / total_test
         print(f"Epoch {epoch + 1}/{epochs} | Test Loss: {avg_test_loss:.4f} | Test Accuracy: {test_accuracy:.2f}%")
 
-        # log metrics to wandb
+        # Update the learning rate using the scheduler
+        scheduler.step(avg_test_loss)  # Adjust based on test loss (for ReduceLROnPlateau)
+
+        # Save the best model
+        if avg_test_loss < best_test_loss:
+            best_test_loss = avg_test_loss
+            torch.save(model.state_dict(), save_path)
+            print(f"Model saved with Test Loss: {avg_test_loss:.4f}")
+
+        # Log metrics to wandb
         wandb.log({
             "train_loss": avg_train_loss,
             "train_accuracy": train_accuracy,
             "test_loss": avg_test_loss,
             "test_accuracy": test_accuracy,
+            "learning_rate": optimizer.param_groups[0]['lr']
         })
+
     wandb.finish()
