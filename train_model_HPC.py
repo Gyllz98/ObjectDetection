@@ -27,7 +27,6 @@ if __name__ == "__main__":
     train_files, val_files = train_test_split(train_files, test_size=0.2, random_state=42)
     
     transform = transforms.Compose([
-        # transforms.Resize((128, 128)),
         transforms.Resize(250),  # Ensure images are at least slightly larger than crop size
         transforms.RandomResizedCrop(224, scale=(0.8, 1.0), ratio=(0.75, 1.33)), # Better size for ResNet101
         transforms.RandomRotation(15),
@@ -38,11 +37,18 @@ if __name__ == "__main__":
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
+    transform_test = transforms.Compose([
+        transforms.Resize(250),  # Ensure images are at least slightly larger than crop size
+        transforms.RandomResizedCrop(224, scale=(0.8, 1.0), ratio=(0.75, 1.33)), # Better size for ResNet101
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
     # Initialize datasets
     train_dataset = PotholeDataset(img_dir, annotations_dir, train_files, transform=transform)
     # print(len(train_dataset))
-    val_dataset = PotholeDataset(img_dir, annotations_dir, val_files, transform=transform)
-    test_dataset = PotholeDataset(img_dir, annotations_dir, test_files, transform=transform)
+    val_dataset = PotholeDataset(img_dir, annotations_dir, val_files, transform=transform_test)
+    test_dataset = PotholeDataset(img_dir, annotations_dir, test_files, transform=transform_test)
 
     # # WeightedRandomSampler for training
     # labels = [label for _, label in tqdm(train_dataset,desc = "sampler for split")]
