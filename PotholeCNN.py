@@ -73,6 +73,17 @@ class ResNet101Pothole(nn.Module):
         # Replace the fully connected layer (for ImageNet) with one for binary classification
         num_features = self.resnet101.fc.in_features
         self.resnet101.fc = nn.Linear(num_features, 1)  # Output 1 logit for binary classification
+        # Remove the original fully connected layer
+        self.resnet101.fc = nn.Identity()
+
+        # Add custom layers with dropout
+        self.classifier = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(num_features, 1)
+        )
+
 
     def forward(self, x):
-        return self.resnet101(x)  # Forward pass through the ResNet-101
+        x = self.resnet101(x)
+        x = self.classifier(x)
+        return x

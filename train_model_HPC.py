@@ -38,8 +38,7 @@ if __name__ == "__main__":
     ])
 
     transform_test = transforms.Compose([
-        transforms.Resize(250),  # Ensure images are at least slightly larger than crop size
-        transforms.RandomResizedCrop(224, scale=(0.8, 1.0), ratio=(0.75, 1.33)), # Better size for ResNet101
+        transforms.Resize(224),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
