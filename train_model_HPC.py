@@ -53,13 +53,13 @@ if __name__ == "__main__":
     # labels = [label for _, label in tqdm(train_dataset,desc = "sampler for split")]
     
     class_bgd_ratio = 1/3
-    train_loader = balanced_loader2(train_dataset, batch_size=16, target_ratio=class_bgd_ratio)  # DataLoader for training
-    val_loader = balanced_loader2(val_dataset, batch_size=16, target_ratio=class_bgd_ratio)    # DataLoader for validation
-    test_loader = balanced_loader2(test_dataset, batch_size=16, shuffle=True)    # DataLoader for testing
+    train_loader = balanced_loader2(train_dataset, batch_size=32, target_ratio=class_bgd_ratio)  # DataLoader for training
+    val_loader = balanced_loader2(val_dataset, batch_size=32, target_ratio=class_bgd_ratio)    # DataLoader for validation
+    test_loader = balanced_loader2(test_dataset, batch_size=32, shuffle=True)    # DataLoader for testing
     # Initialize model, optimizer, and load data
     model = ResNet101Pothole(pretrained=True, freeze_backbone=True)  # Your model class
 
-    optimizer = torch.optim.Adam(model.parameters(), lr = 1e-4,weight_decay = 1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr = 1e-3,weight_decay = 1e-4)
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=3, factor=0.1)
 
