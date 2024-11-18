@@ -45,7 +45,7 @@ def load_proposals(img_name, proposals_dir):
 
 
 
-def run_model_on_proposals(image, proposals, model, score_threshold=0.5):
+def run_model_on_proposals(image, proposals, model, device, score_threshold=0.5):
     """
     Run the trained model on the proposals extracted from an image,
     returning only those classified as 'pothole'.
@@ -70,7 +70,7 @@ def run_model_on_proposals(image, proposals, model, score_threshold=0.5):
         bboxes.append(bbox)
     if not imgs:
         return [], []
-    imgs = torch.stack(imgs)
+    imgs = torch.stack(imgs).to(device)  # Move batch to GPU
     with torch.no_grad():
         outputs = model(imgs)
         # Assuming binary classification; adjust based on your model's output
@@ -84,7 +84,7 @@ def run_model_on_proposals(image, proposals, model, score_threshold=0.5):
     return filtered_bboxes, filtered_scores
 
 
-def get_detections_for_image(image_path, proposals_dir, model, score_threshold=0.5):
+def get_detections_for_image(image_path, proposals_dir, model, device, score_threshold=0.5):
     """
     Get detections for a single image, returning only those classified as 'pothole'.
 
@@ -104,7 +104,7 @@ def get_detections_for_image(image_path, proposals_dir, model, score_threshold=0
     proposals = load_proposals(img_name, proposals_dir)
 
     # Run model on proposals and filter detections
-    bboxes, scores = run_model_on_proposals(image, proposals, model, score_threshold)
+    bboxes, scores = run_model_on_proposals(image, proposals, model, device, score_threshold)
     detections = []
     for bbox, score in zip(bboxes, scores):
         detections.append({'bbox': bbox, 'score': score.item(), 'image_id': img_name})
