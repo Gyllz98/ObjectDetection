@@ -27,7 +27,7 @@ def train(model, optimizer, scheduler, epochs, train_loader, test_loader, device
         }
     )
 
-    best_test_loss = float('inf')  # Track the best test loss to save the model
+    best_test_accuracy = -float('inf')  # Track the best test loss to save the model
 
     for epoch in range(epochs):
         # Training phase
@@ -95,10 +95,10 @@ def train(model, optimizer, scheduler, epochs, train_loader, test_loader, device
         scheduler.step(avg_test_loss)  # Adjust based on test loss (for ReduceLROnPlateau)
 
         # Save the best model
-        if avg_test_loss < best_test_loss:
-            best_test_loss = avg_test_loss
+        if test_accuracy > best_test_accuracy:
+            best_test_accuracy = test_accuracy
             torch.save(model.state_dict(), save_path)
-            print(f"Model saved with Test Loss: {avg_test_loss:.4f}")
+            print(f"Model saved with Test Accuracy: {test_accuracy:.4f}")
 
         # Log metrics to wandb
         wandb.log({

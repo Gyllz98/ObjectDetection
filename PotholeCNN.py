@@ -55,35 +55,51 @@ class PotholeCNN(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
-class ResNet101Pothole(nn.Module):
-    def __init__(self, pretrained=True, freeze_backbone = False):
-        super(ResNet101Pothole, self).__init__()
-        
-        # Load the ResNet-101 model
-        if pretrained:
-            self.resnet101 = models.resnet101(weights=models.ResNet101_Weights.IMAGENET1K_V1)
-        else:
-            self.resnet101 = models.resnet101(weights=None)
+class PretrainedPothole(nn.Module):
+    def __init__(self, backbone = "VGG16", pretrained=True, freeze_backbone = False):
+        super(PretrainedPothole, self).__init__()
+        match backbone:
+            case "ResNet101":
+                # Load the ResNet-101 model
+                if pretrained:
+                    self.model = models.resnet101(weights=models.ResNet101_Weights.IMAGENET1K_V1)
+                else:
+                    self.model = models.resnet101(weights=None)
 
-        # Optionally freeze all layers in the backbone
-        if freeze_backbone:
-            for param in self.resnet101.parameters():
-                param.requires_grad = False
-        
-        # Replace the fully connected layer (for ImageNet) with one for binary classification
-        num_features = self.resnet101.fc.in_features
-        self.resnet101.fc = nn.Linear(num_features, 1)  # Output 1 logit for binary classification
-        # Remove the original fully connected layer
-        self.resnet101.fc = nn.Identity()
+                # Replace the fully connected layer (for ImageNet) with one for binary classification
+                num_features = self.model.fc.in_features
+                self.model.fc = nn.Linear(num_features, 1)  # Output 1 logit for binary classification
+                # Remove the original fully connected layer
+                self.model.fc = nn.Identity()
 
-        # Add custom layers with dropout
-        self.classifier = nn.Sequential(
-            nn.Dropout(0.5),
-            nn.Linear(num_features, 1)
-        )
+                # Add custom layers with dropout
+                self.classifier = nn.Sequential(
+                    nn.Dropout(0.5),
+                    nn.Linear(num_features, 1)
+                )
 
+                if freeze_backbone:
+                    for param in self.model.parameters():
+                        param.requires_grad = False
+            case "VGG16":
+                if pretrained:
+                    self.model = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1)
+                else:
+                    self.model = models.vgg16(weights=None)
+
+                last_layer = self.model.classifier[-1]
+
+                self.model.classifier[-1] = nn.Linear(last_layer.in_features,1)
+
+                if freeze_backbone:
+                    for param in self.model.features.parameters():
+                        param.requires_grad = False
+                    for param in self.model.classifier[-3].parameters():
+                        param.requires_grad = True
+            case None:
+                print("No model was selected.")
 
     def forward(self, x):
-        x = self.resnet101(x)
-        x = self.classifier(x)
+        x = self.model(x)
+        # x = self.classifier(x)
         return x
